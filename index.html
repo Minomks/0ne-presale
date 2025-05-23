@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>0NE Presale</title>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: monospace;
+            text-align: center;
+            padding: 50px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 1em;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>0NE Presale Portal</h1>
+    <p>Connect your wallet and buy Splitter tokens.</p>
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <br><br>
+    <input type="number" id="maticAmount" placeholder="Amount in MATIC">
+    <br>
+    <button onclick="buyTokens()">Buy Splitter</button>
+    <p id="status"></p>
+
+    <script>
+        const presaleAddress = "0xD9EB3895f106951F48E1e559485e9b72306fB03D";
+        const web3 = new Web3(window.ethereum);
+
+        async function connectWallet() {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            document.getElementById("status").innerText = "Wallet connected";
+        }
+
+        async function buyTokens() {
+            const accounts = await web3.eth.getAccounts();
+            const amount = document.getElementById("maticAmount").value;
+            const valueInWei = web3.utils.toWei(amount, 'ether');
+            const transactionParameters = {
+                from: accounts[0],
+                to: presaleAddress,
+                value: valueInWei
+            };
+
+            try {
+                await web3.eth.sendTransaction(transactionParameters);
+                document.getElementById("status").innerText = "Transaction sent!";
+            } catch (error) {
+                document.getElementById("status").innerText = "Transaction failed: " + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
