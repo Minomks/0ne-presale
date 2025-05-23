@@ -1,75 +1,76 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ONE Presale Portal</title>
-    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-    <style>
-        body {
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 10px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ONE Presale Portal</title>
 </head>
-<body>
-    <h1>ONE Presale Portal</h1>
-    <p>Connect your wallet and buy Splitter tokens.</p>
-    <button onclick="connectWallet()">Connect Wallet</button><br>
-    <input id="amount" placeholder="Amount in MATIC" /><br>
-    <button onclick="buyTokens()">Buy Splitter</button>
-    <p id="status"></p>
+<body style="background-color:#000; color:#fff; font-family: Arial, sans-serif; text-align:center; padding-top:50px;">
+<h1>ONE Presale Portal</h1>
+<p>Connect your wallet and buy Splitter tokens.</p>
+<button id="connectBtn">Connect Wallet</button><br/><br/>
+<input id="amount" type="number" placeholder="Amount in MATIC" min="0" step="0.0001" style="padding:8px; font-size:16px; width:200px;"/><br/><br/>
+<button id="buyBtn" disabled>Buy Splitter</button>
+<p id="status"></p>
 
-    <script>
-        let web3;
-        let contract;
-        const contractAddress = "0x1f5999B1580CBd02cbfA611B7EC676EdF0647399";
-        const abi = [
-            {
-                "inputs": [],
-                "name": "buyTokens",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            }
-        ];
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+<script>
+const presaleAddress = "0x1f5999B1580CBd02cbfA611B7EC676EdF0647399";
+const presaleAbi = [
+  "function buySplitter() external payable"
+];
 
-        async function connectWallet() {
-            if (window.ethereum) {
-                web3 = new Web3(window.ethereum);
-                try {
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    contract = new web3.eth.Contract(abi, contractAddress);
-                    document.getElementById('status').innerText = "Wallet connected.";
-                } catch (error) {
-                    document.getElementById('status').innerText = "Wallet connection failed.";
-                }
-            } else {
-                document.getElementById('status').innerText = "Install MetaMask!";
-            }
-        }
+let provider;
+let signer;
+let contract;
 
-        async function buyTokens() {
-            const accounts = await web3.eth.getAccounts();
-            const amount = document.getElementById("amount").value;
-            const value = web3.utils.toWei(amount, 'ether');
+const connectBtn = document.getElementById("connectBtn");
+const buyBtn = document.getElementById("buyBtn");
+const statusP = document.getElementById("status");
+const amountInput = document.getElementById("amount");
 
-            contract.methods.buyTokens().send({ from: accounts[0], value: value })
-                .then(receipt => {
-                    document.getElementById("status").innerText = "Transaction successful!";
-                })
-                .catch(err => {
-                    document.getElementById("status").innerText = "Transaction failed: " + err.message;
-                });
-        }
-    </script>
+connectBtn.onclick = async () => {
+  if(window.ethereum){
+    try {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      signer = provider.getSigner();
+      const network = await provider.getNetwork();
+      if(network.chainId !== 137){
+        statusP.textContent = "Please switch to the Polygon Mainnet in MetaMask.";
+        buyBtn.disabled = true;
+        return;
+      }
+      contract = new ethers.Contract(presaleAddress, presaleAbi, signer);
+      statusP.textContent = "Wallet connected. Network: Polygon Mainnet.";
+      buyBtn.disabled = false;
+      connectBtn.disabled = true;
+    } catch (error) {
+      statusP.textContent = "Connection rejected.";
+    }
+  } else {
+    statusP.textContent = "MetaMask not detected.";
+  }
+};
+
+buyBtn.onclick = async () => {
+  const amount = parseFloat(amountInput.value);
+  if(isNaN(amount) || amount <= 0){
+    statusP.textContent = "Please enter a valid amount of MATIC.";
+    return;
+  }
+  const value = ethers.utils.parseEther(amount.toString());
+  statusP.textContent = "Waiting for transaction confirmation...";
+  buyBtn.disabled = true;
+  try {
+    const tx = await contract.buySplitter({value});
+    await tx.wait();
+    statusP.textContent = "Purchase successful! Transaction hash: " + tx.hash;
+  } catch(e) {
+    statusP.textContent = "Transaction failed: " + e.message;
+  }
+  buyBtn.disabled = false;
+};
+</script>
 </body>
 </html>
