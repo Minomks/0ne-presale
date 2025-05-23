@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONE Presale Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ONE Presale Portal</h1>
+    <p>Connect your wallet and buy Splitter tokens.</p>
+    <button onclick="connectWallet()">Connect Wallet</button><br>
+    <input id="amount" placeholder="Amount in MATIC" /><br>
+    <button onclick="buyTokens()">Buy Splitter</button>
+    <p id="status"></p>
+
+    <script>
+        let web3;
+        let contract;
+        const contractAddress = "0x1f5999B1580CBd02cbfA611B7EC676EdF0647399";
+        const abi = [
+            {
+                "inputs": [],
+                "name": "buyTokens",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            }
+        ];
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    contract = new web3.eth.Contract(abi, contractAddress);
+                    document.getElementById('status').innerText = "Wallet connected.";
+                } catch (error) {
+                    document.getElementById('status').innerText = "Wallet connection failed.";
+                }
+            } else {
+                document.getElementById('status').innerText = "Install MetaMask!";
+            }
+        }
+
+        async function buyTokens() {
+            const accounts = await web3.eth.getAccounts();
+            const amount = document.getElementById("amount").value;
+            const value = web3.utils.toWei(amount, 'ether');
+
+            contract.methods.buyTokens().send({ from: accounts[0], value: value })
+                .then(receipt => {
+                    document.getElementById("status").innerText = "Transaction successful!";
+                })
+                .catch(err => {
+                    document.getElementById("status").innerText = "Transaction failed: " + err.message;
+                });
+        }
+    </script>
+</body>
+</html>
