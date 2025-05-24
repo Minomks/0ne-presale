@@ -1,0 +1,35 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simple Wallet Connect Test</title>
+</head>
+<body style="background-color:#000; color:#fff; font-family: Arial, sans-serif; text-align:center; padding-top:50px;">
+<h2>Wallet Connection Test</h2>
+<button onclick="connectWallet()">Connect Wallet</button>
+<p id="status"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+<script>
+async function connectWallet() {
+    if (window.ethereum) {
+        try {
+            await ethereum.request({ method: 'eth_requestAccounts' });
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const address = await signer.getAddress();
+            const network = await provider.getNetwork();
+            document.getElementById('status').innerText = 
+                "Connected: " + address + "\nNetwork: " + network.name + " (" + network.chainId + ")";
+        } catch (error) {
+            document.getElementById('status').innerText = "Connection rejected or failed.";
+        }
+    } else {
+        document.getElementById('status').innerText = "MetaMask not detected.";
+    }
+}
+</script>
+</body>
+</html>
